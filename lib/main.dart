@@ -1,21 +1,70 @@
+import 'dart:async';
 import 'package:flutter/material.dart';
+import 'package:google_fonts/google_fonts.dart';
 
 void main() {
-  runApp(const MyApp());
+  runApp(const BonekaApp());
 }
 
-class MyApp extends StatelessWidget {
-  const MyApp({super.key});
+class BonekaApp extends StatelessWidget {
+  const BonekaApp({super.key});
 
   @override
   Widget build(BuildContext context) {
     return MaterialApp(
-      title: 'Login App',
+      debugShowCheckedModeBanner: false,
       theme: ThemeData(
-        primarySwatch: Colors.pink,
-        scaffoldBackgroundColor: Colors.pink[50], // Latar belakang cerah
+        primaryColor: Colors.pinkAccent,
+        textTheme: GoogleFonts.poppinsTextTheme(),
       ),
-      home: const LoginPage(),
+      home: const SplashScreen(),
+    );
+  }
+}
+
+class SplashScreen extends StatefulWidget {
+  const SplashScreen({super.key});
+
+  @override
+  _SplashScreenState createState() => _SplashScreenState();
+}
+
+class _SplashScreenState extends State<SplashScreen> {
+  @override
+  void initState() {
+    super.initState();
+    Timer(const Duration(seconds: 3), () {
+      Navigator.pushReplacement(
+        context,
+        MaterialPageRoute(builder: (context) => const LoginPage()),
+      );
+    });
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return Scaffold(
+      backgroundColor: Colors.pink[50],
+      body: Center(
+        child: Column(
+          mainAxisAlignment: MainAxisAlignment.center,
+          children: [
+            Image.asset(
+              'assets/logo.jpg',
+              height: 120,
+            ),
+            const SizedBox(height: 20),
+            const Text(
+              'Manda\'s Store',
+              style: TextStyle(
+                fontSize: 28,
+                fontWeight: FontWeight.bold,
+                color: Colors.pinkAccent,
+              ),
+            ),
+          ],
+        ),
+      ),
     );
   }
 }
@@ -28,74 +77,298 @@ class LoginPage extends StatefulWidget {
 }
 
 class _LoginPageState extends State<LoginPage> {
-  final TextEditingController _usernameController = TextEditingController();
-  final TextEditingController _passwordController = TextEditingController();
+  final _formKey = GlobalKey<FormState>();
+  final TextEditingController emailController = TextEditingController();
+  final TextEditingController passwordController = TextEditingController();
 
-  final String correctUsername = "Manda"; // Ganti dengan username yang benar
-  final String correctPassword = "Manda"; // Ganti dengan password yang benar
+  String staticEmail = "manda";
+  String staticPassword = "123456";
 
-  void _login() {
-    String username = _usernameController.text;
-    String password = _passwordController.text;
-
-    if (username == correctUsername && password == correctPassword) {
-      Navigator.pushReplacement(
-        context,
-        MaterialPageRoute(builder: (context) => DashboardPage(username: username)),
-      );
-    } else {
-      ScaffoldMessenger.of(context).showSnackBar(const SnackBar(
-        content: Text('Username atau Password salah!'),
-      ));
-    }
+  @override
+  Widget build(BuildContext context) {
+    return Scaffold(
+      backgroundColor: Colors.pink[50],
+      body: Center(
+        child: Padding(
+          padding: const EdgeInsets.all(20.0),
+          child: Form(
+            key: _formKey,
+            child: Column(
+              mainAxisAlignment: MainAxisAlignment.center,
+              children: [
+                Image.asset(
+                  'assets/logo.jpg',
+                  height: 100,
+                ),
+                const SizedBox(height: 20),
+                const Text(
+                  'Manda\'s Store',
+                  style: TextStyle(
+                    fontSize: 32,
+                    fontWeight: FontWeight.bold,
+                    color: Colors.pinkAccent,
+                  ),
+                ),
+                const SizedBox(height: 40),
+                TextFormField(
+                  controller: emailController,
+                  decoration: const InputDecoration(
+                    labelText: 'Username',
+                    border: OutlineInputBorder(),
+                    filled: true,
+                    fillColor: Colors.white,
+                  ),
+                  validator: (value) {
+                    if (value == null || value.isEmpty) {
+                      return 'Email tidak boleh kosong';
+                    }
+                    return null;
+                  },
+                ),
+                const SizedBox(height: 20),
+                TextFormField(
+                  controller: passwordController,
+                  obscureText: true,
+                  decoration: const InputDecoration(
+                    labelText: 'Password',
+                    border: OutlineInputBorder(),
+                    filled: true,
+                    fillColor: Colors.white,
+                  ),
+                  validator: (value) {
+                    if (value == null || value.isEmpty) {
+                      return 'Password tidak boleh kosong';
+                    }
+                    return null;
+                  },
+                ),
+                const SizedBox(height: 20),
+                ElevatedButton(
+                  onPressed: () {
+                    if (_formKey.currentState!.validate()) {
+                      if (emailController.text == staticEmail &&
+                          passwordController.text == staticPassword) {
+                        Navigator.pushReplacement(
+                          context,
+                          MaterialPageRoute(
+                              builder: (context) =>
+                                  HomePage(email: staticEmail)),
+                        );
+                      } else {
+                        ScaffoldMessenger.of(context).showSnackBar(
+                          const SnackBar(
+                            content: Text('Email atau password salah!'),
+                          ),
+                        );
+                      }
+                    }
+                  },
+                  style: ElevatedButton.styleFrom(
+                    backgroundColor: Colors.pinkAccent,
+                    padding: const EdgeInsets.symmetric(
+                        horizontal: 50, vertical: 15),
+                  ),
+                  child: const Text('Login'),
+                ),
+              ],
+            ),
+          ),
+        ),
+      ),
+    );
   }
+}
+
+class HomePage extends StatefulWidget {
+  final String email;
+
+  const HomePage({super.key, required this.email});
+
+  @override
+  _HomePageState createState() => _HomePageState();
+}
+
+class _HomePageState extends State<HomePage> {
+  int _currentIndex = 0;
+  final List<Map<String, String>> favorites = [];
+
+  @override
+  Widget build(BuildContext context) {
+    final pages = [
+      HomeMenu(
+        onAddToFavorites: (item) {
+          setState(() {
+            if (!favorites.any((fav) => fav["name"] == item["name"])) {
+              favorites.add(item);
+            }
+          });
+        },
+      ),
+      FavoriteMenu(favorites: favorites),
+      ProfileMenu(
+        email: widget.email,
+        onLogout: () {
+          Navigator.pushReplacement(
+            context,
+            MaterialPageRoute(builder: (context) => const LoginPage()),
+          );
+        },
+      ),
+    ];
+
+    return Scaffold(
+      appBar: AppBar(
+        title: const Text('Manda\'s Store'),
+        backgroundColor: Colors.pinkAccent,
+      ),
+      drawer: Drawer(
+        child: ListView(
+          padding: EdgeInsets.zero,
+          children: [
+            DrawerHeader(
+              decoration: const BoxDecoration(color: Colors.pinkAccent),
+              child: Center(
+                child: Text(
+                  'Manda\'s Store',
+                  style: GoogleFonts.poppins(
+                    textStyle: const TextStyle(
+                      color: Colors.white,
+                      fontSize: 24,
+                    ),
+                  ),
+                ),
+              ),
+            ),
+            ListTile(
+              leading: const Icon(Icons.home),
+              title: const Text('Home'),
+              onTap: () {
+                setState(() {
+                  _currentIndex = 0;
+                });
+                Navigator.pop(context);
+              },
+            ),
+            ListTile(
+              leading: const Icon(Icons.favorite),
+              title: const Text('Favorit'),
+              onTap: () {
+                setState(() {
+                  _currentIndex = 1;
+                });
+                Navigator.pop(context);
+              },
+            ),
+            ListTile(
+              leading: const Icon(Icons.person),
+              title: const Text('Profil'),
+              onTap: () {
+                setState(() {
+                  _currentIndex = 2;
+                });
+                Navigator.pop(context);
+              },
+            ),
+          ],
+        ),
+      ),
+      body: pages[_currentIndex],
+    );
+  }
+}
+
+class HomeMenu extends StatelessWidget {
+  final Function(Map<String, String>) onAddToFavorites;
+
+  HomeMenu({super.key, required this.onAddToFavorites});
+
+  final List<Map<String, String>> products = [
+    {"name": "Boneka 1", "image": "assets/b1.jpeg"},
+    {"name": "Boneka 2", "image": "assets/b2.jpeg"},
+    {"name": "Boneka 3", "image": "assets/b3.jpeg"},
+    {"name": "Boneka 4", "image": "assets/b4.jpeg"},
+  ];
+
+  @override
+  Widget build(BuildContext context) {
+    return ListView.builder(
+      padding: const EdgeInsets.all(10),
+      itemCount: products.length,
+      itemBuilder: (context, index) {
+        final product = products[index];
+        return Card(
+          elevation: 5,
+          margin: const EdgeInsets.symmetric(vertical: 10),
+          child: ListTile(
+            leading: Image.asset(
+              product["image"]!,
+              width: 50,
+              height: 50,
+              fit: BoxFit.cover,
+              errorBuilder: (context, error, stackTrace) {
+                return const Icon(Icons.image, color: Colors.grey);
+              },
+            ),
+            title: Text(
+              product["name"]!,
+              style: const TextStyle(
+                fontWeight: FontWeight.bold,
+                color: Colors.pinkAccent,
+              ),
+            ),
+            trailing: IconButton(
+              icon: const Icon(Icons.favorite, color: Colors.pink),
+              onPressed: () => onAddToFavorites(product),
+            ),
+            onTap: () {
+              // Navigasi ke layar detail produk
+              Navigator.push(
+                context,
+                MaterialPageRoute(
+                  builder: (context) => ProductDetail(product: product),
+                ),
+              );
+            },
+          ),
+        );
+      },
+    );
+  }
+}
+
+class ProductDetail extends StatelessWidget {
+  final Map<String, String> product;
+
+  const ProductDetail({super.key, required this.product});
 
   @override
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
-        title: const Text('Halaman Login'),
+        title: Text(product["name"]!),
+        backgroundColor: Colors.pinkAccent,
       ),
-      body: Padding(
-        padding: const EdgeInsets.all(16.0),
+      body: Center(
         child: Column(
+          mainAxisSize: MainAxisSize.min, // Mengatur agar kolom tidak memenuhi layar
           mainAxisAlignment: MainAxisAlignment.center,
           children: [
             Image.asset(
-              'assets/logo.png',
-              height: 100, // Atur tinggi logo sesuai kebutuhan
+              product["image"]!,
+              height: 200,
+              fit: BoxFit.cover,
+              errorBuilder: (context, error, stackTrace) {
+                return const Icon(Icons.image, size: 100, color: Colors.grey);
+              },
             ),
             const SizedBox(height: 20),
-            TextField(
-              controller: _usernameController,
-              decoration: const InputDecoration(
-                labelText: 'Username',
-                border: OutlineInputBorder(),
-                focusedBorder: OutlineInputBorder(
-                  borderSide: BorderSide(color: Colors.pink),
-                ),
+            Text(
+              product["name"]!,
+              style: const TextStyle(
+                fontSize: 24,
+                fontWeight: FontWeight.bold,
+                color: Colors.pinkAccent,
               ),
-            ),
-            const SizedBox(height: 10),
-            TextField(
-              controller: _passwordController,
-              decoration: const InputDecoration(
-                labelText: 'Password',
-                border: OutlineInputBorder(),
-                focusedBorder: OutlineInputBorder(
-                  borderSide: BorderSide(color: Colors.pink),
-                ),
-              ),
-              obscureText: true,
-            ),
-            const SizedBox(height: 20),
-            ElevatedButton(
-              style: ElevatedButton.styleFrom(
-                backgroundColor: Colors.pink, // Warna tombol
-                padding: const EdgeInsets.symmetric(vertical: 15, horizontal: 30),
-              ),
-              onPressed: _login,
-              child: const Text('Login', style: TextStyle(fontSize: 18)),
             ),
           ],
         ),
@@ -104,91 +377,84 @@ class _LoginPageState extends State<LoginPage> {
   }
 }
 
-class DashboardPage extends StatelessWidget {
-  final String username;
 
-  const DashboardPage({super.key, required this.username});
+class FavoriteMenu extends StatelessWidget {
+  final List<Map<String, String>> favorites;
+
+  const FavoriteMenu({super.key, required this.favorites});
 
   @override
   Widget build(BuildContext context) {
-    return Scaffold(
-      appBar: AppBar(
-        title: const Text('Dashboard'),
-      ),
-      body: Container(
-        decoration: BoxDecoration(
-          gradient: LinearGradient(
-            colors: [Colors.pink[200]!, Colors.pink[400]!],
-            begin: Alignment.topLeft,
-            end: Alignment.bottomRight,
-          ),
-        ),
-        child: Padding(
-          padding: const EdgeInsets.all(16.0),
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              const Center(
-                child: CircleAvatar(
-                  radius: 50,
-                  backgroundImage: AssetImage('assets/logo.png'), // Ganti dengan gambar profil
-                ),
-              ),
-              const SizedBox(height: 20),
-              Text(
-                'Selamat datang, $username!',
-                style: const TextStyle(fontSize: 24, fontWeight: FontWeight.bold),
-              ),
-              const SizedBox(height: 20),
-              const Text(
-                'Informasi Akun',
-                style: TextStyle(fontSize: 20, fontWeight: FontWeight.bold),
-              ),
-              const SizedBox(height: 10),
-              Card(
-                elevation: 4,
-                child: Padding(
-                  padding: const EdgeInsets.all(16.0),
-                  child: Column(
-                    children: [
-                      ListTile(
-                        title: const Text('Username'),
-                        subtitle: Text(username),
-                      ),
-                      ListTile(
-                        title: const Text('Email'),
-                        subtitle: Text('${username}@gmail.com'), // Menampilkan email dengan format yang diinginkan
-                      ),
-                    ],
+    return favorites.isEmpty
+        ? const Center(child: Text('Belum ada item favorit'))
+        : ListView.builder(
+            itemCount: favorites.length,
+            itemBuilder: (context, index) {
+              final favorite = favorites[index];
+              return Card(
+                elevation: 5,
+                margin: const EdgeInsets.symmetric(vertical: 10),
+                child: ListTile(
+                  leading: Image.asset(
+                    favorite["image"]!,
+                    width: 50,
+                    height: 50,
+                    fit: BoxFit.cover,
+                    errorBuilder: (context, error, stackTrace) {
+                      return const Icon(Icons.image, color: Colors.grey);
+                    },
+                  ),
+                  title: Text(
+                    favorite["name"]!,
+                    style: const TextStyle(
+                      fontWeight: FontWeight.bold,
+                      color: Colors.pinkAccent,
+                    ),
                   ),
                 ),
-              ),
-              const SizedBox(height: 20),
-              const Text(
-                'Aksi Cepat',
-                style: TextStyle(fontSize: 20, fontWeight: FontWeight.bold),
-              ),
-              const SizedBox(height: 10),
-              Row(
-                mainAxisAlignment: MainAxisAlignment.spaceEvenly,
-                children: [
-                  ElevatedButton(
-                    onPressed: () {
-                      // Aksi untuk tombol ini
-                    },
-                    child: const Text('Pengaturan'),
-                  ),
-                  ElevatedButton(
-                    onPressed: () {
-                      // Aksi untuk tombol ini
-                    },
-                    child: const Text('Logout'),
-                  ),
-                ],
-              ),
-            ],
+              );
+            },
+          );
+  }
+}
+
+class ProfileMenu extends StatelessWidget {
+  final String email;
+  final Function onLogout;
+
+  const ProfileMenu({super.key, required this.email, required this.onLogout});
+
+  @override
+  Widget build(BuildContext context) {
+    return Center( // Membuat konten di tengah layar
+      child: Column(
+        mainAxisSize: MainAxisSize.min, // Agar hanya mengambil ruang secukupnya
+        mainAxisAlignment: MainAxisAlignment.center,
+        children: [
+          CircleAvatar(
+            radius: 50,
+            backgroundColor: Colors.pink[50],
+            child: const Icon(Icons.person, size: 80, color: Colors.pinkAccent),
           ),
-        ),
+          const SizedBox(height: 20),
+          Text(
+            'Halo, $email',
+            style: const TextStyle(
+              fontSize: 20,
+              fontWeight: FontWeight.bold,
+              color: Colors.pinkAccent,
+            ),
+          ),
+          const SizedBox(height: 20),
+          ElevatedButton(
+            onPressed: () => onLogout(),
+            style: ElevatedButton.styleFrom(
+              backgroundColor: Colors.pinkAccent,
+              padding: const EdgeInsets.symmetric(horizontal: 50, vertical: 15),
+            ),
+            child: const Text('Logout'),
+          ),
+        ],
       ),
     );
   }
